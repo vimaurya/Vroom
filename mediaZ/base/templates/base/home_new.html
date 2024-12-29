@@ -1,0 +1,109 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Itim&display=swap" rel="stylesheet">
+        <link href="{% static 'styles/home.css' %}" rel="stylesheet">
+        <title>Document</title>
+    </head>
+    <body>
+        <div class="v1_4">
+            <div class="v15_24">
+                <div class="v15_7">
+                    <div class="v1_5"></div>
+                    <div class="v3_6"></div>
+                    <div class="v3_11"></div>
+                    <a href="/" class="v7_14">TakieTalkie</a>
+
+                    <form method="GET" action="">
+                        <input type="text" name="q" placeholder="search something here..."class="v7_16"/>
+                    </form>
+
+                    {% if request.user.is_authenticated %}
+                    <a href="{%url 'user' request.user.id %}"class="v7_15">{{request.user}}</a>
+                    <div class="v7_17"></div>
+                    <a href="{% url 'logout' %}" class="v7_18">Logout</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="v7_15">login</a>
+                    {% endif %}
+                    <div class="v11_3"></div>
+                </div>
+            </div>
+            <div class="topics">
+                
+            <span class="v13_5">Browse Topics</span>
+            <div class="v15_23">
+                <div class="v15_9">
+                    <div class="v13_6"></div>
+                        {% for topic in topics %}
+                        <div class="topic-item">
+                            <a href="{% url 'home' %}?q={{topic.name}}" class="v15_20"> {{topic.name}}</a><br>
+                        </div>
+
+                        {% endfor %}
+                </div>
+            </div>
+            </div>
+            <div class="v15_66">
+                <div class="v15_65">
+                    <span class="v15_28">Create Room</span>
+                    <a href="{% url 'create-room' %}" class="v15_32">Create Room</a>
+                    {% for room in rooms %}
+                    <div class="v15_30">
+                        <h4 class="v15_35">{{ room.name }}</h4>
+                        <span class="v15_31">By - <a href="{% url 'user' room.host.id %}">{{ room.host.username }}</a></span>
+                        <small class="v15_36">{{ room.description|default:"No description provided." }}</small>
+                        <div class="v15_34"></div>
+                        {% if request.user == room.host %}
+                        <a href="{% url 'edit-room' room.id %}" class="v15_32">Edit</a>
+                        <a href="{% url 'delete-room' room.id %}" class="v15_33">Delete</a>
+                        {% endif %}
+                        <a href="{% url 'room' room.id %}" class="v15_28">View Room</a>
+                    </div>
+                    <hr>
+                    {% empty %}
+                    <p>No rooms available. <a href="{% url 'create-room' %}">Create one</a>.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="v15_108">
+                <div class="v15_107">
+                    <span class="v15_67">Recent Activity</span>
+                    <div class="v15_68"></div>
+                    <div class="v15_72"></div>
+                    <div class="v15_70"></div>
+                    <span class="v15_74">friend -- 2 days, 3 hours ago replied to “vikash”</span>
+                    <span class="v15_75">This is the comment that friend has passed about vi....</span>
+                    <div class="v15_77"></div>
+                    <span class="v15_78">Delete</span>
+                    <div class="v15_79"></div>
+                    <div class="v15_80"></div>
+                    <span class="v15_81">friend -- 2 days, 3 hours ago replied to “vikash”</span>
+                    <span class="v15_82">This is the comment that friend has passed about vi....</span>
+                    <div class="v15_83"></div>
+                    <span class="v15_84">Delete</span>
+                    <div class="v15_86"></div>
+                    <div class="v15_87"></div>
+                    <span class="v15_88">friend -- 2 days, 3 hours ago replied to “vikash”</span>
+                    <span class="v15_89">This is the comment that friend has passed about vi....</span>
+                    <div class="v15_90"></div>
+                    <span class="v15_91">Delete</span>
+                    <div class="v15_93"></div>
+                    <div class="v15_94"></div>
+                    <span class="v15_95">friend -- 2 days, 3 hours ago replied to “vikash”</span>
+                    <span class="v15_96">This is the comment that friend has passed about vi....</span>
+                    <div class="v15_97"></div>
+                    <span class="v15_98">Delete</span>
+                    <div class="v15_100"></div>
+                    <div class="v15_101"></div>
+                    <span class="v15_102">friend -- 2 days, 3 hours ago replied to “vikash”</span>
+                    <span class="v15_103">This is the comment that friend has passed about vi....</span>
+                    <div class="v15_104"></div>
+                    <span class="v15_105">Delete</span>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

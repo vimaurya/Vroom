@@ -14,50 +14,19 @@
 
 <div class="home-container">
     <div>
-        <h3>Browse Topics</h3>
-        <hr>
-        <div>
-            <a href="{% url 'home' %}">All</a>    
-        </div>
-        {% for topic in topics %}
-            <div>
-                <a href="{% url 'home' %}?q={{topic.name}}"> {{topic.name}}</a>    
-            </div>
-
-        {% endfor %}
-
+        {% include 'base/topics.html' %}
     </div>
     <div> 
         <h5>{{room_count}} rooms available</h5>
         <a href="{% url 'create-room' %}"><h3>Create Room</h3></a>
         <hr>
         <div>
-            {% for room in rooms %}
-                <div>
-                    {% if request.user == room.host %}
-                    <span>By - {{room.host.username}}</span>
-                    <a href="{% url 'edit-room' room.id %}">Edit Room-</a>
-                    <a href="{% url 'delete-room' room.id %}">-Delete </a>
-                    {% endif %}
-                    <h4>{{room.id}} -- <a href="{% url 'room' room.id %}">{{room.name}}</a></h4>
-                    <small>{{room.description}}</small>
-                    <hr>
-                </div>
-            {% endfor %}
+            {% include 'base/feed.html' %}
         </div>
     </div>
 
     <div>
-        <h3>Recent activity</h3>
-        <hr>
-        {% for comment in room_comments %}
-            <div>
-                <small>{{comment.user}} -- {{comment.created | timesince}} ago</small>
-                <small>replied to "{{comment.room.host}}"</small>
-                <p>{{comment}}</p>
-                <hr>
-            </div>
-        {% endfor %}
+        {% include 'base/activity.html'%}
     </div>
 </div>
 

@@ -1,3 +1,4 @@
 {
-    "html.autoClosingTags": true
+    "html.autoClosingTags": true,
+    "editor.linkedEditing": true
 }
