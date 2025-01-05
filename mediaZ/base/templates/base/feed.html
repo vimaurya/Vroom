@@ -1,4 +1,10 @@
-{% for room in rooms %}
+<style>
+    .no-room{
+        color: grey;
+    }
+</style>
+
+{% for room in page_obj %}
                 <div>
                     By - <a href="{% url 'user' room.host.id %}">{{room.host.username}}</a>
                     {% if request.user == room.host %}
@@ -8,5 +14,6 @@
                     <h4>{{room.id}} -- <a href="{% url 'room' room.id %}">{{room.name}}</a></h4>
                     <small>{{room.description}}</small>
                     <hr>
-                </div>
+                </div>  
 {% endfor %}
+

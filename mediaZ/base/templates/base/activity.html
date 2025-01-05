@@ -1,15 +1,26 @@
+<style>
+    .no-activity{
+        color: grey;
+    }
+</style>
+
 <div>    
     <h3>Recent activity</h3>
     <hr>
-    {% for comment in room_comments %}
-            <div>
-            <small><a href="{% url 'user' comment.user.id %}">{{comment.user}}</a> -- {{comment.created | timesince}} ago</small>
-            <small>replied to "{{comment.room.host}}"</small>
-            <p>{{comment}}</p>
-            {% if request.user == comment.user %}
-                <a href="{% url 'delete-comment' comment.id %}">Delete</a>
-            {% endif %}
-            <hr>
-        </div>
-    {% endfor %}
+    {% if room_comments %}
+        {% for comment in comment_page_obj %}
+                <div>
+                <small><a href="{% url 'user' comment.user.id %}">{{comment.user}}</a> -- {{comment.created | timesince}} ago</small>
+                <small>replied to "{{comment.room.host}}"</small>
+                <p>{{comment}}</p>
+                {% if request.user == comment.user %}
+                    <a href="{% url 'delete-comment' comment.id %}">Delete</a>
+                {% endif %}
+                <hr>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="no-activity">No recent activity here...</p>
+    {% endif %}
+        
 </div>

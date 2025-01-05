@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.contrib.auth.forms import UserCreationForm
+from django.core.paginator import Paginator
 
 
 def loginPage(request):
@@ -77,11 +78,23 @@ def home(request):
     
     room_count = rooms.count()
     topics = Topic.objects.all()
+    
+    paginator = Paginator(rooms, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    
+    comment_paginator = Paginator(room_comments, 7)
+    comment_page_number = request.GET.get('comment_page')
+    comment_page_obj = comment_paginator.get_page(comment_page_number)
+    
     context = {
         'rooms':rooms,
         'topics': topics, 
         'room_count':room_count,
-        'room_comments':room_comments
+        'room_comments':room_comments,
+        'page_obj': page_obj,
+        'comment_page_obj':comment_page_obj
     }
     return render(request, 'base/home.html', context)
 
@@ -109,14 +122,26 @@ def room(request, pk):
 
 def userProfile(request, pk):
     user = User.objects.get(id=pk)
-    rooms = user.room_set.all()
+    rooms = user.room_set.all().order_by('-created')
     topics = Topic.objects.all()
-    room_comments = user.message_set.all()
+    room_comments = user.message_set.all().order_by('-created')
+    
+    paginator = Paginator(rooms, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    
+    comment_paginator = Paginator(room_comments, 7)
+    comment_page_number = request.GET.get('comment_page')
+    comment_page_obj = comment_paginator.get_page(comment_page_number)
+    
     context = {
         'user':user,
         'rooms':rooms,
         'room_comments':room_comments,
-        'topics':topics
+        'topics':topics,
+        'page_obj': page_obj,
+        'comment_page_obj':comment_page_obj
     }
     return render(request, 'base/profile.html', context)
 
@@ -124,34 +149,43 @@ def userProfile(request, pk):
 @login_required(login_url='login')
 def createRoom(request):
     form = RoomForm()
+    topics  = Topic.objects.all()
     
     if request.method=='POST':
-        print(request.POST)
-        form = RoomForm(request.POST)
-        if form.is_valid():
-            room = form.save(commit=False)
-            room.host = request.user
-            room.save()
-            return redirect('home')
+       topic_name = request.POST.get('topic')
+       topic, created = Topic.objects.get_or_create(name=topic_name)
+       
+       Room.objects.create(
+           host=request.user, 
+           topic = topic,
+           name = request.POST.get('name'),
+           description = request.POST.get('description') 
+       )
+       return redirect('home')
             
-    context = {'form':form}
+    context = {'form':form, 'topics':topics}
     return render(request, 'base/room_form.html', context)
+
 
 @login_required(login_url='login')
 def updateRoom(request, pk):
     room = Room.objects.get(id=pk)
     form = RoomForm(instance=room)
+    topics = Topic.objects.all()
     
     if request.user != room.host:
         return HttpResponse('You can not update the room!')
     
-    if request.method == 'POST':
-        form = RoomForm(request.POST, instance=room)
-        if form.is_valid():
-            form.save()
+    if request.method=='POST':
+        topic_name = request.POST.get('topic')
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        room.name = request.POST.get('name')
+        room.topic = topic
+        room.description = request.POST.get('description')
+        room.save()
         return redirect('home')
-    
-    context = {'form': form}
+            
+    context = {'form': form, 'room':room, 'topics':topics}
     return render(request, 'base/room_form.html', context)
 
 

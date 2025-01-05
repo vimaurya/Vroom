@@ -7,10 +7,15 @@
         display: grid;
         grid-template-columns: 1fr 3fr 1fr;
     }
+    .no-rooms{
+        color:grey;
+        text-align: center;
+    }
 
 </style>
 
-<h1>{{user.username}}</h1>
+<h1 class="header">{{user.username}}</h1>
+<hr>
 
 <div class="profile-container">
         
@@ -18,9 +23,14 @@
         {% include 'base/topics.html' %}
     </div>
     
-    <div>
-        {%include 'base/feed.html' %}
-    </div>
+    {% if rooms %}
+        <div>
+            <h5>{{ page_obj.paginator.count }} rooms available</h5>
+            {%include 'base/feed.html' %}
+        </div>
+    {% else %}
+        <p class="no-rooms">No rooms created..</p>
+    {% endif %}
     
     <div>
         {% include 'base/activity.html' %}

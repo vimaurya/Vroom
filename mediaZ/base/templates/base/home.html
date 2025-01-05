@@ -10,24 +10,51 @@
     }
 </style>
 
-<h1>Home template</h1>
-
+{% if request.GET.q != None %}
+<h1 class="header">{{ request.GET.q }}</h1>
+{% else %}
+<h1 class="header">Home</h1>
+{% endif %}
+<hr>
 <div class="home-container">
     <div>
         {% include 'base/topics.html' %}
     </div>
+
     <div> 
-        <h5>{{room_count}} rooms available</h5>
+        <h5>{{ page_obj.paginator.count }} rooms available</h5>
         <a href="{% url 'create-room' %}"><h3>Create Room</h3></a>
+        {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Next page</a><br>
+                <a href="?page={{ page_obj.paginator.num_pages }}">Last page &raquo;</a>
+        {% endif %}
         <hr>
         <div>
             {% include 'base/feed.html' %}
         </div>
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; First</a>
+                <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </div>
     </div>
 
     <div>
-        {% include 'base/activity.html'%}
+        {% include 'base/activity.html' %}
+        <div>
+            {% if comment_page_obj.has_previous %}
+                <a href="?comment_page=1">&laquo; First</a>
+                <a href="?comment_page={{ comment_page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+                
+            {% if comment_page_obj.has_next %}
+                <a href="?comment_page={{ comment_page_obj.next_page_number }}">Next</a>
+                <a href="?comment_page={{ comment_page_obj.paginator.num_pages }}">Last &raquo;</a>
+            {% endif %}
+        </div>
     </div>
 </div>
-
 {% endblock %}
