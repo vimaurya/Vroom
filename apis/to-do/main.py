@@ -1,21 +1,8 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-
-app = Flask(__name__)
-
-app.json.sort_keys = False
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:vikash@localhost/todo'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-
-class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    task = db.Column(db.String(100), nullable=False)
-    definition = db.Column(db.String(500), nullable=True)
-    deadline = db.Column(db.DateTime, nullable = True)
-    is_completed = db.Column(db.Boolean, nullable = False, default = False)
+from flask import request, jsonify, g
+from dbconfig import app, db
+from models import Task, User
+from auth import signup, login
+from auth import jwt_required
 
 
 with app.app_context():
@@ -24,11 +11,43 @@ with app.app_context():
     
     
 @app.route('/')
+@jwt_required
 def home():
-    return jsonify({"Hello person!" : "Are you ready to make a to-do"})
+    return jsonify({"context": g.user})
 
+
+
+@app.route('/sign-up/', methods=['POST'])
+def signup_user():
+    json = request.get_json()
+    
+    username = json['username']
+    password = str(json['password'])
+    
+    res, flag = signup(username, password)
+    
+    if not flag:
+        return jsonify(res)
+    
+    return jsonify(res)
+
+
+@app.route('/login/', methods=['POST'])
+def login_user():
+    json = request.get_json()
+    username = json['username']
+    password = str(json['password'])
+    
+    res, flag = login(username, password)
+    
+    if not flag:
+        return jsonify({"jwt":res, "token_type":"bearer"})
+    else:
+        return jsonify({"Error":f"res"})
+    
 
 @app.route('/create-task/', methods=['POST'])
+@jwt_required
 def create_task():
     if request.method == 'POST':
         json = request.get_json()
@@ -36,7 +55,8 @@ def create_task():
         task = json.get('task'),
         definition = json.get('definition'),
         deadline = json.get('deadline') if json.get('deadline') else None,
-        is_completed = json.get('is_completed')
+        is_completed = json.get('is_completed'),
+        username = g.user['username']
         )
         
         try:
@@ -48,9 +68,10 @@ def create_task():
         
         
 @app.route('/get-task/<int:task_id>/', methods=['GET'])
+@jwt_required
 def get_task(task_id):
     try:
-        task = db.session.execute(db.select(Task).filter_by(id=task_id)).scalar_one()
+        task = db.session.execute(db.select(Task).filter_by(id=task_id, username=g.user['username'])).scalar_one()
     
         return jsonify({
             "task" : task.task,
@@ -64,9 +85,10 @@ def get_task(task_id):
 
 
 @app.route('/all-tasks/',methods=['GET'])
+@jwt_required
 def all_tasks():
     try:
-        tasks = db.session.execute(db.select(Task).order_by(Task.is_completed.asc(), Task.deadline.asc())).scalars()
+        tasks = Task.query.filter_by(username=g.user['username']).all()
         tasks_list = []
         
         for task in tasks:
@@ -86,9 +108,11 @@ def all_tasks():
     
 
 @app.route('/update-task/<int:task_id>', methods=['PUT'])
+@jwt_required
 def update_task(task_id):
     try:
-        task = db.session.execute(db.select(Task).filter_by(id=task_id)).scalar_one()
+        username = g.username
+        task = db.session.execute(db.select(Task).filter_by(id=task_id), username=username).scalar_one()
         if task: 
             json = request.get_json()
     
@@ -120,9 +144,11 @@ def update_task(task_id):
     
     
 @app.route('/mark/<int:task_id>', methods=['PUT'])
+@jwt_required
 def mark(task_id):
     try:
-        task = db.session.execute(db.select(Task).filter_by(id=task_id)).scalar_one()
+        username = g.user['username']
+        task = db.session.execute(db.select(Task).filter_by(id=task_id), username=username).scalar_one_or_none()
         if task:
             task.is_completed = not task.is_completed
             db.session.commit()
@@ -133,7 +159,8 @@ def mark(task_id):
                 "task" : task.task,
                 "definition" : task.definition,
                 "deadline" : task.deadline,
-                "is_completed" : task.is_completed
+                "is_completed" : task.is_completed,
+                "username" : task.username
             }])
            
         else:
@@ -144,18 +171,21 @@ def mark(task_id):
 
 
 @app.route('/delete-task/<int:task_id>', methods=['DELETE'])
+@jwt_required
 def delete(task_id):
     try:
-        task = db.session.execute(db.select(Task).filter_by(id=task_id)).scalar_one()
+        username = username
+        task = db.session.execute(db.select(Task).filter_by(id=task_id), username=username).scalar_one()
         
         if not task:
             return jsonify({"Error":"task does not exist"})
         
-        db.session.delete(task)
-        db.session.commit()
+        else:
+            db.session.delete(task)
+            db.session.commit()
+            
+            return jsonify({"success":"task deleted successfully"})
         
-        return jsonify({"success":"task deleted successfully"})
-    
     except Exception as e:
         return jsonify({"Error":f"{e}"})
 
