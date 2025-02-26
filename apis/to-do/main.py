@@ -110,9 +110,9 @@ def all_tasks():
 @app.route('/update-task/<int:task_id>', methods=['PUT'])
 @jwt_required
 def update_task(task_id):
-    try:
-        username = g.username
-        task = db.session.execute(db.select(Task).filter_by(id=task_id), username=username).scalar_one()
+    try:   
+        task = db.session.execute(db.select(Task).filter_by(id=task_id, username=g.user['username'])).scalar_one()
+    
         if task: 
             json = request.get_json()
     
@@ -147,8 +147,8 @@ def update_task(task_id):
 @jwt_required
 def mark(task_id):
     try:
-        username = g.user['username']
-        task = db.session.execute(db.select(Task).filter_by(id=task_id), username=username).scalar_one_or_none()
+        task = db.session.execute(db.select(Task).filter_by(id=task_id, username=g.user['username'])).scalar_one()
+    
         if task:
             task.is_completed = not task.is_completed
             db.session.commit()
@@ -174,9 +174,8 @@ def mark(task_id):
 @jwt_required
 def delete(task_id):
     try:
-        username = username
-        task = db.session.execute(db.select(Task).filter_by(id=task_id), username=username).scalar_one()
-        
+        task = db.session.execute(db.select(Task).filter_by(id=task_id, username=g.user['username'])).scalar_one()
+    
         if not task:
             return jsonify({"Error":"task does not exist"})
         
