@@ -1,7 +1,7 @@
 from flask import request, jsonify, g
 from dbconfig import app, db
 from models import Task, User
-from auth import signup, login
+from auth import signup, login, invalidate_jwt
 from auth import jwt_required
 
 
@@ -43,9 +43,14 @@ def login_user():
     if not flag:
         return jsonify({"jwt":res, "token_type":"bearer"})
     else:
-        return jsonify({"Error":f"res"})
+        return jsonify({"Error":f"{res}"})
     
-
+@app.route('/logout/',methods=['PUT'])
+@jwt_required
+def logout():
+    res = invalidate_jwt()    
+    return jsonify(res)
+    
 @app.route('/create-task/', methods=['POST'])
 @jwt_required
 def create_task():

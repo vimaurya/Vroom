@@ -43,7 +43,12 @@ def generate_jwt(payload):
     JWT = jwt.encode(payload, SECRET, algorithm="HS256")
     print(JWT)
     return JWT
-    
+
+def invalidate_jwt():
+    auth_header = request.headers.get("Authorization")
+    token = auth_header.split(" ")[1]
+    TOKEN_BLOCKLIST.add(token)
+    return {"success":"user logged out"}
     
 def verify_jwt(token):
     try:
@@ -59,9 +64,7 @@ def verify_jwt(token):
         print(f'Exception verifying jwt : {e}')
     
 def signup(username, password):
-    auth_header = request.headers.get("Authorization")
-    token = auth_header.split(" ")[1]
-    TOKEN_BLOCKLIST.add(token)
+    invalidate_jwt()
     
     if not db.session.get(User, username):
         password = password.encode('utf-8')
@@ -84,9 +87,7 @@ def signup(username, password):
     
     
 def login(username, password):
-    auth_header = request.headers.get("Authorization")
-    token = auth_header.split(" ")[1]
-    TOKEN_BLOCKLIST.add(token)
+    invalidate_jwt()
     
     try:
         data = db.session.get(User, username) 
@@ -98,6 +99,8 @@ def login(username, password):
             if hash == data.password:
                 jwt = generate_jwt({"username":data.username})
                 return jwt, 0
+        else:
+            raise Exception("Invalid credentials")
         
-    except:
-        return {"Error" : "invalid credentials"}, 1
+    except Exception as e:
+        return e, 1
