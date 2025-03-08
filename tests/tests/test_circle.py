@@ -1,5 +1,5 @@
 import pytest
-import source.shapes as shapes
+from ..source import shapes
 import math
 
 
@@ -20,3 +20,5 @@ class TestCircle:
     def test_perimeter(self):
         result = self.circle.perimeter()
         assert result == math.pi * self.circle.radius * 2
+        
+         

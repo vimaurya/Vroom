@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .chat {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+        .chat-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 360px;
+            text-align: center;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        .message-box {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .message-box li {
+            padding: 5px;
+            background: #e9ecef;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            cursor: pointer;
+        }
+        .send-button {
+            background: #28a745;
+            color: white;
+        }
+        .send-button:hover {
+            background: #218838;
+        }
+        .leave-button {
+            background: red;
+            color: white;
+        }
+        .leave-button:hover {
+            background: darkred;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat">
+        <h2>Chat Session: {{ session_id }}</h2>
+
+        <div class="chat-container">
+            <ul class="message-box" id="message-box">
+                {% if messages %}
+                    {% for message in messages %}
+                        <li><strong>{{ message.user }}:</strong> {{ message.message }}</li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
+
+        <h4 id="username">{{username}}</h4>
+        <input type="text" id="message" placeholder="Type a message..." required>
+        <button class="send-button" onclick="sendMessage()">Send</button>
+        <button class="leave-button" onclick="leaveSession()">Leave Session</button>
+    </div>
+
+    <script>
+        var socket = io.connect("http://" + document.domain + ":" + location.port);
+        var sessionId = "{{ session_id }}";
+
+        function sendMessage() {
+            var message = document.getElementById("message").value;
+
+            if (message) {
+                socket.send({"session_id": sessionId, "message": message});
+                document.getElementById("message").value = "";
+            }
+        }
+
+        socket.on("message", function(data) {
+            var messageBox = document.getElementById("message-box");
+            var li = document.createElement("li");
+            li.innerHTML = "<strong>" + data.user + ":</strong> " + data.message;
+            messageBox.appendChild(li);
+            messageBox.scrollTop = messageBox.scrollHeight;
+        });
+
+        document.getElementById("message").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); 
+                sendMessage(); 
+            }
+        });
+
+        function leaveSession() {
+            socket.emit("leave", {"session_id": sessionId, "user": document.getElementById("username").textContent});
+            
+            window.location.href = "/session/";
+        }
+    </script>
+</body>
+</html>
