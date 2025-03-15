@@ -2,3 +2,5 @@ flask
 flask_sqlalchemy
 python-dotenv
 flask-socketio
+jwt
+hashlib

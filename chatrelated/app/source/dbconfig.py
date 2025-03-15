@@ -13,8 +13,6 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("PORT")
 DATABASE = os.getenv("DATABASE")
 
-print(DB_HOST, DB_PASSWORD, DB_PORT, DB_USERNAME, DATABASE)
-
 app.json.sort_keys = False
 
 #app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DATABASE}'

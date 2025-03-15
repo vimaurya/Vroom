@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join session</title>
+    <title>Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,15 +60,14 @@
 <body>
 
     <div class="login-container">
-        <h2>Join</h2>
-        <form action="/join-session" method="POST">
+        <h2>Login</h2>
+        <form action="/login" method="POST">
             <input type="text" name="username" placeholder="Name" required>
-            <input type="text" name="session_id" placeholder="Session ID">
             <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Join</button>
+            <button type="submit">Signup</button>
         </form>
         
-        <p class="register-link">Don't have sessions? <a href="/session">Create a new session</a></p>
+        <p class="register-link">Don't have an account? <a href="/">Signup</a></p>
     </div>
 
 </body>
