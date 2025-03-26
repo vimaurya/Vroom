@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Join Session</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,9 +13,8 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            flex-direction: column;
         }
-        .login-container {
+        .session-container {
             background: white;
             padding: 20px;
             border-radius: 10px;
@@ -23,16 +22,23 @@
             width: 300px;
             text-align: center;
         }
-        input, button {
-            width: 90%;
+        h2 {
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
         button {
+            width: 100%;
+            padding: 10px;
             background: #28a745;
             color: white;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
         button:hover {
@@ -51,12 +57,10 @@
         }
     </style>
 </head>
+
 <body>
 
-    <div class="login-container">
-        <h2>Login</h2>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
                     <script>
@@ -66,13 +70,17 @@
             {% endif %}
         {% endwith %}
 
-        <form action="/login/" method="POST">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Login</button>
+        
+    <div class="session-container">
+        <h2>Join session</h2>
+        <form action="/session" method="POST">
+            <input type="text" name="username" placeholder="Name" required>
+            <input type="text" name="session_id" placeholder="Session ID">
+            <input type="password" name="session_password" placeholder="Password" required>
+            <button type="submit">Join Session</button>
         </form>
-
-        <p class="register-link">Don't have an account? <a href="/">Signup</a></p>
+        
+        <p class="register-link">Don't Have a session? <a href="/session/">Create a session</a></p>
     </div>
 
 </body>

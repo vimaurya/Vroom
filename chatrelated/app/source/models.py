@@ -8,6 +8,8 @@ class Session(db.Model):
     __tablename__ = "sessions"
     session_id = db.Column(db.String(100), primary_key=True)
     host_username = db.Column(db.String(100), db.ForeignKey("chatusers.username"), nullable = False)
+    session_password = db.Column(db.String(200), nullable = False)
+    
 
 class Messages(db.Model):
     message_id = db.Column(db.Integer, primary_key = True)

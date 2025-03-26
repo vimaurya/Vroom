@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, session
+from flask import render_template, redirect, url_for, session, flash
 from flask import request, jsonify
 from dbconfig import app, db
 from models import Session, Messages, Chatusers
@@ -6,6 +6,7 @@ from flask_socketio import SocketIO, send, emit
 from dotenv import load_dotenv
 import os
 import hashlib
+from auth import validatePass
 
 
 load_dotenv()
@@ -62,6 +63,21 @@ def login():
         if request.method == 'GET':
             return render_template("/login.html")
         
+        elif request.method == 'POST':
+            username = request.form['username']
+            password = hash_password(request.form['password'])
+            print(f'This is password : {password}')
+            boolVal = validatePass(username, password)
+            
+            if boolVal:
+                set_username(username)
+                return redirect(url_for("session_view", flag = False))
+            else:
+                flash("Invalid username or password!", "error")
+                
+                return redirect(url_for("login"))
+            
+        
     except Exception as e:
         print({"Error" : f"{e}"})
 
@@ -71,11 +87,27 @@ def home():
     return render_template("/index.html")
 
 
-@app.route("/join-session/",methods=['POST'])
+@app.route("/join-session/",methods=['GET', 'POST'])
 def join():
-    session_id = request.form['session_id']
+    try:
+        if request.method == 'GET':
+            return render_template("/joinSession.html")
+        
+        elif request.method == 'POST':
+            session_id = request.form['session_id']
+            session_password = hash_password(request.form['password'])
+            
+            session_check = db.session.execute(db.select(Session).filter_by(session_id = session_id)).scalar_one_or_none()
+            
+            if session_check:
+                if session_check.password == session_password:
+                    return redirect(url_for("new_session", id=session_id))
+            
+            flash("Session does not exist...")
+            return redirect(url_for("join"))
     
-    return redirect(url_for("new_session", id=session_id))
+    except Exception as e:
+        print(f"Error : {e}")
 
 
 @app.route('/session/', methods=['GET', 'POST'])
@@ -87,6 +119,7 @@ def session_view():
         
         elif request.method == 'POST':
             session_id = request.form['session_id']
+            session_password = hash_password(request.form['session_password'])
             session_check = db.session.execute(db.select(Session).filter_by(session_id = session_id)).scalar_one_or_none()
             
             if session_check:
@@ -94,7 +127,8 @@ def session_view():
             
             newSession = Session(
                 session_id = session_id,
-                host_username = session.get('username')
+                host_username = session.get('username'),
+                session_password = session_password
             )
             
             db.session.add(newSession)
@@ -102,7 +136,7 @@ def session_view():
             
             return redirect(url_for("new_session", id=session_id))
     except Exception as e:
-        print({"Error" : f"{e}"})
+        print({"Error in session_view" : f"{e}"})
 
 @app.route('/session/<string:id>/', methods=['GET'])
 def new_session(id):
