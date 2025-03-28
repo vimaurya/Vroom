@@ -34,6 +34,23 @@
             overflow-y: auto;
             max-height: 400px;
         }
+        .logout-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
         .message-box {
             list-style: none;
             padding: 0;
@@ -77,6 +94,12 @@
     <div class="chat">
         <h2>Chat Session: {{ session_id }}</h2>
 
+        <div class="logout-container">
+            <form action="/logout/" method="POST">
+                <button type="submit" class="logout-btn" onclick="leaveSession()">Logout</button>
+            </form>
+        </div>
+
         <div class="chat-container">
             <ul class="message-box" id="message-box">
                 {% if messages %}
@@ -86,7 +109,6 @@
                 {% endif %}
             </ul>
         </div>
-
         <h4 id="username">{{username}}</h4>
         <input type="text" id="message" placeholder="Type a message..." required>
         <button class="send-button" onclick="sendMessage()">Send</button>
@@ -94,14 +116,26 @@
     </div>
 
     <script>
-        var socket = io.connect("http://" + document.domain + ":" + location.port);
+        var socket = io.connect(window.location.protocol + "//" + window.location.host, {
+            transports: ["websocket"]
+        });
+
         var sessionId = "{{ session_id }}";
+
+        socket.emit("join", {"session_id": sessionId});
 
         function sendMessage() {
             var message = document.getElementById("message").value;
 
             if (message) {
-                socket.send({"session_id": sessionId, "message": message});
+                socket.emit("message", {"session_id": sessionId, "message": message});
+
+                var messageBox = document.getElementById("message-box");
+                var li = document.createElement("li");
+                li.innerHTML = `<strong>You:</strong> ${message}`;
+                messageBox.appendChild(li);
+                messageBox.scrollTop = messageBox.scrollHeight;
+
                 document.getElementById("message").value = "";
             }
         }
@@ -109,13 +143,12 @@
         socket.on("message", function(data) {
             var messageBox = document.getElementById("message-box");
             var li = document.createElement("li");
-            li.innerHTML = "<strong>" + data.user + ":</strong> " + data.message;
+            li.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
             messageBox.appendChild(li);
             messageBox.scrollTop = messageBox.scrollHeight;
         });
 
-        socket.on("refresh", function(){
-            alert("refreshing...")
+        socket.on("refresh", function() {
             location.reload();
         });
 
@@ -128,9 +161,9 @@
 
         function leaveSession() {
             socket.emit("leave", {"session_id": sessionId});
-            
-            window.location.href = "/leave/"+sessionId;
+            window.location.href = "/leave/" + sessionId;
         }
     </script>
+
 </body>
 </html>

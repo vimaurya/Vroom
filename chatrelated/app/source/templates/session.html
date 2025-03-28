@@ -13,6 +13,25 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            flex-direction: column;
+            position: relative;
+        }
+        .logout-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .logout-btn:hover {
+            background: #c82333;
         }
         .session-container {
             background: white;
@@ -60,23 +79,32 @@
 
 <body>
 
+    <div class="logout-container">
+        <form action="/logout/" method="POST">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
     <div class="session-container">
         <h2>New session</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <script>
+                        alert("{{ message }}"); 
+                    </script>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <form action="/session" method="POST">
-            <input type="text" name="username" placeholder="Name" required>
+            <input type="text" name="username" value="{{ session.get('username', '') }}" readonly required>
             <input type="text" name="session_id" placeholder="Session ID">
-            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="session_password" placeholder="Password" required>
             <button type="submit">Create Session</button>
         </form>
-        
+
         <p class="register-link">Have a session? <a href="/join-session/">Join a session</a></p>
     </div>
-        
-    {% if flag %}
-        <script>
-            alert("session id already exists...")
-        </script>
-    {% endif %}
 
 </body>
 </html>

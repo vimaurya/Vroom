@@ -61,6 +61,16 @@
 
     <div class="login-container">
         <h2>Sign-up</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <script>
+                        alert("{{ message }}"); 
+                    </script>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
         <form action="/" method="POST">
             <input type="text" name="username" placeholder="Name" required>
             <input type="password" name="password" placeholder="Password" required>

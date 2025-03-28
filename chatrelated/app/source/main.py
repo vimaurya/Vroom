@@ -2,11 +2,12 @@ from flask import render_template, redirect, url_for, session, flash
 from flask import request, jsonify
 from dbconfig import app, db
 from models import Session, Messages, Chatusers
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO, send, emit, join_room, leave_room
 from dotenv import load_dotenv
 import os
 import hashlib
 from auth import validatePass
+from flask_cors import CORS
 
 
 load_dotenv()
@@ -16,8 +17,10 @@ app.secret_key = os.getenv("SECRET")
 with app.app_context():
     db.create_all()
 
+CORS(app)
 
 socketio = SocketIO(app, cors_allowed_origins="*")
+
 
 def set_username(username = None):
     session['username'] = username
@@ -43,6 +46,12 @@ def signup():
             username = set_username(request.form['username'])
             password = hash_password(request.form['password'])
             
+            username_check = db.session.execute(db.select(Chatusers).filter_by(username=username)).scalar_one_or_none()
+            
+            if username_check:
+                flash("User already exists..")
+                return redirect(url_for("login"))
+            
             new_user = Chatusers(
                 username = username,
                 password = password
@@ -51,7 +60,8 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
             
-            return redirect(url_for("home"))
+            flash("Signed up. Login to proceed..")
+            return redirect(url_for("login"))
         
     except Exception as e:
         print({"Error" : f"{e}"})
@@ -71,7 +81,7 @@ def login():
             
             if boolVal:
                 set_username(username)
-                return redirect(url_for("session_view", flag = False))
+                return redirect(url_for("join"))
             else:
                 flash("Invalid username or password!", "error")
                 
@@ -82,9 +92,10 @@ def login():
         print({"Error" : f"{e}"})
 
 
-@app.route("/join/")
-def home():
-    return render_template("/index.html")
+@app.route('/logout/', methods=['POST'])
+def logout():
+    set_username()
+    return redirect(url_for("login"))
 
 
 @app.route("/join-session/",methods=['GET', 'POST'])
@@ -95,15 +106,16 @@ def join():
         
         elif request.method == 'POST':
             session_id = request.form['session_id']
-            session_password = hash_password(request.form['password'])
+            session_password = hash_password(request.form['session_password'])
             
             session_check = db.session.execute(db.select(Session).filter_by(session_id = session_id)).scalar_one_or_none()
             
             if session_check:
-                if session_check.password == session_password:
+                if session_check.session_password == session_password:
                     return redirect(url_for("new_session", id=session_id))
-            
-            flash("Session does not exist...")
+    
+            flash("session id or password is incorrect...")
+                
             return redirect(url_for("join"))
     
     except Exception as e:
@@ -113,9 +125,8 @@ def join():
 @app.route('/session/', methods=['GET', 'POST'])
 def session_view():
     try:
-        flag = request.args.get('flag')
         if request.method == 'GET':
-            return render_template("/session.html", flag = flag)
+            return render_template("/session.html")
         
         elif request.method == 'POST':
             session_id = request.form['session_id']
@@ -123,7 +134,8 @@ def session_view():
             session_check = db.session.execute(db.select(Session).filter_by(session_id = session_id)).scalar_one_or_none()
             
             if session_check:
-                return redirect(url_for("session_view", flag=True))
+                flash("Session already exists...")
+                return redirect(url_for("session_view"))
             
             newSession = Session(
                 session_id = session_id,
@@ -137,6 +149,7 @@ def session_view():
             return redirect(url_for("new_session", id=session_id))
     except Exception as e:
         print({"Error in session_view" : f"{e}"})
+
 
 @app.route('/session/<string:id>/', methods=['GET'])
 def new_session(id):
@@ -158,48 +171,63 @@ def new_session(id):
         
 @app.route('/leave/<string:id>', methods=['GET'])
 def leave_session(id):
-        
-    return redirect(url_for("home"))
-    
-    
-    
-@socketio.on("leave")
-def leave_socket(data):
-    messages = Messages.query.filter_by(user = session.get('username')).all()
+    messages = db.session.execute(db.select(Messages).filter_by(session_id = id)).scalar()
     
     for message in messages:
-        db.session.delete(message)
+        if message.user == session.get('username'):
+            db.session.delete(message)
 
     db.session.commit()
     
-    lv_session = db.session.execute(db.select(Session).filter_by(session_id = data['session_id'])).scalar_one()
+    lv_session = db.session.execute(db.select(Session).filter_by(session_id = id)).scalar_one()
     
     if session.get('username') == lv_session.host_username:
         db.session.delete(lv_session)
         db.session.commit()
-        
-    emit("refresh", {}, broadcast=True)   
-        
-    
+    return redirect(url_for("join"))
+
+
+@socketio.on("join")
+def handle_join(data):
+    try:
+        session_id = data['session_id']
+        join_room(session_id)
+        print(f"User joined session {session_id}")
+    except Exception as e:
+        print(f"Error in handle_join: {e}")
+
+@socketio.on("leave")
+def handle_leave(data):
+    try:
+        session_id = data["session_id"]
+        leave_room(session_id)
+        emit("refresh", {}, room=session_id)  
+        print(f"User left session {session_id}")
+    except Exception as e:
+        print(f"Error in handle_leave: {e}")
+
 @socketio.on("message")
 def handle_message(data):
+    print(f"New message in session {data['session_id']}: {data['message']}")
     try:
-        host = db.session.execute(db.select(Session).filter_by(session_id = data['session_id'])).scalar_one()
+        session_id = data['session_id']
         user = session.get('username')
+
+        host = db.session.execute(db.select(Session).filter_by(session_id=session_id)).scalar_one()
         new_message = Messages(
-            message = data['message'],
-            user = user,
-            host = host.host_username,
-            session_id = data['session_id']
+            message=data['message'],
+            user=user,
+            host=host.host_username,
+            session_id=session_id
         )
         db.session.add(new_message)
         db.session.commit()
-        
-        send({"user": user, "message": data['message']}, broadcast=True)
+
+        emit("message", {"user": user, "message": data['message']}, room=session_id)
+
     except Exception as e:
-        print({"Error" : f"{e}"})
-        
+        print(f"Error in handle_message: {e}")
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)    
