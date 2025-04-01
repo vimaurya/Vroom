@@ -6,7 +6,7 @@ import hashlib
 import jwt
 from datetime import datetime, timedelta
     
-
+ 
 SECRET = "Thisisalltoomuchbullshit" 
 
 TOKEN_BLOCKLIST = set()

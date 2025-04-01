@@ -57,6 +57,7 @@ def signup():
                 password = password
             )
             
+            print({f"success : new user, {username} joined"})
             db.session.add(new_user)
             db.session.commit()
             
@@ -168,16 +169,13 @@ def new_session(id):
         return render_template("/sessionChat.html", session_id = id, messages = messages, username = session.get("username"))
     except Exception as e:
         print({"error" : f"{e}"})
+    
         
 @app.route('/leave/<string:id>', methods=['GET'])
 def leave_session(id):
-    messages = db.session.execute(db.select(Messages).filter_by(session_id = id)).scalar()
     
-    for message in messages:
-        if message.user == session.get('username'):
-            db.session.delete(message)
-
-    db.session.commit()
+    db.session.execute(db.delete(Messages).where(Messages.session_id == id))
+    db.session.commit()     
     
     lv_session = db.session.execute(db.select(Session).filter_by(session_id = id)).scalar_one()
     
@@ -196,6 +194,7 @@ def handle_join(data):
     except Exception as e:
         print(f"Error in handle_join: {e}")
 
+
 @socketio.on("leave")
 def handle_leave(data):
     try:
@@ -205,6 +204,7 @@ def handle_leave(data):
         print(f"User left session {session_id}")
     except Exception as e:
         print(f"Error in handle_leave: {e}")
+
 
 @socketio.on("message")
 def handle_message(data):
